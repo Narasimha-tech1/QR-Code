@@ -97,12 +97,19 @@
 </head>
 <body>
     <div class="container">
+        <!-- Add logo -->
+        <h1 style="color: red; font-size: 2.5rem; font-weight: bold;">SuperK</h1>
         <h1>QR Code Generator</h1>
         <input type="text" id="urlInput" placeholder="Enter URL here" value="https://"/>
         <br>
         <button onclick="generateQR()">Generate QR Code</button>
         <button onclick="downloadQR()" id="downloadBtn" class="download-btn">Download QR Code</button>
-        <div id="qrcode"></div>
+        <div id="qrcode" style="position: relative; background-color: white; padding: 15px; border: 2px solid #000; border-radius: 10px; display: inline-block;">
+            <!-- Add logo overlay with white background -->
+            <div id="qrLogo" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 20px; font-weight: bold; pointer-events: none; display: none; background-color: white; padding: 2px; border-radius: 4px;">
+            <img src="brand_image (1).png" alt="Logo" style="width: 50px; height: 35px; ">
+            </div>
+        </div>
 
         <div class="divider"></div>
 
@@ -132,8 +139,10 @@
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
             });
-            // Show download button after QR code is generated
+
+            // Show the "SuperK" logo in the center of the QR code
             setTimeout(() => {
+                document.getElementById('qrLogo').style.display = 'block';
                 document.getElementById('downloadBtn').style.display = 'inline-block';
             }, 100);
         }
