@@ -116,22 +116,20 @@
         <div id="qrcode" style="position: relative; background-color: white; padding: 15px; border: 2px solid #000; border-radius: 10px; display: inline-block;">
             <!-- Add logo overlay with white background -->
             <div id="qrLogo" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 20px; font-weight: bold; pointer-events: none; display: none; background-color: white; padding: 2px; border-radius: 4px;">
-            <img id="qrLogoImg" src="brand_image (1).png" alt="Logo" style="width: 50px; height: 35px;">
+                <img id="qrLogoImg" src="brand_image (1).png" alt="Logo" style="width: 50px; height: 35px;">
             </div>
         </div>
-
         <div class="divider"></div>
-
         <h1>Barcode Generator</h1>
         <input type="text" id="barcodeInput" placeholder="Enter text for barcode"/>
         <br>
         <button onclick="generateBarcode()">Generate Barcode</button>
+        <button onclick="downloadBarcode()" id="downloadBarcodeBtn" class="download-btn">Download Barcode</button>
         <p id="barcodeError" class="error">Please enter valid text (letters/numbers only)</p>
         <div id="barcode">
             <svg></svg>
         </div>
     </div>
-
     <script>
         let qrcode = null;
         function generateQR() {
@@ -158,10 +156,8 @@
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
             });
-
-            // Show the selected logo in the center of the QR code
+            // Show logo overlay and download button after QR code generation
             setTimeout(() => {
-                // Update logo image if not already set
                 const logoImg = document.getElementById('qrLogoImg');
                 if (logoImg) logoImg.src = logo;
                 document.getElementById('qrLogo').style.display = 'block';
@@ -170,30 +166,46 @@
         }
 
         function downloadQR() {
-            const qrImage = document.querySelector('#qrcode img');
-            if (!qrImage) {
-                alert('Please generate a QR code first');
-                return;
-            }
+            const qrcodeDiv = document.getElementById('qrcode');
+            // Try to get the generated <img> or <canvas> element
+            let qrImage = qrcodeDiv.querySelector('img');
+            let qrCanvas = qrcodeDiv.querySelector('canvas');
+            // Hide logo overlay before capturing QR image
+            const logoDiv = document.getElementById('qrLogo');
+            if (logoDiv) logoDiv.style.display = 'none';
 
-            // Create a temporary link element
-            const link = document.createElement('a');
-            link.download = 'qrcode.png';
-            link.href = qrImage.src;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            setTimeout(() => {
+                if (qrImage && qrImage.src && qrImage.src.startsWith('data:image')) {
+                    // Download the image directly
+                    const link = document.createElement('a');
+                    link.download = 'qrcode.png';
+                    link.href = qrImage.src;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else if (qrCanvas) {
+                    // Convert canvas to image and download
+                    const link = document.createElement('a');
+                    link.download = 'qrcode.png';
+                    link.href = qrCanvas.toDataURL('image/png');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    alert('Please generate a QR code first');
+                }
+                // Restore logo overlay after
+                if (logoDiv) logoDiv.style.display = 'block';
+            }, 100);
         }
 
         function generateBarcode() {
             const text = document.getElementById('barcodeInput').value;
             const errorElement = document.getElementById('barcodeError');
-            
             if (!text) {
                 errorElement.style.display = 'block';
                 return;
             }
-
             try {
                 errorElement.style.display = 'none';
                 JsBarcode("#barcode svg", text, {
@@ -202,9 +214,42 @@
                     height: 100,
                     displayValue: true
                 });
+                document.getElementById('downloadBarcodeBtn').style.display = 'inline-block';
             } catch (e) {
                 errorElement.style.display = 'block';
             }
+        }
+        function downloadBarcode() {
+            const svgElement = document.querySelector('#barcode svg');
+            if (!svgElement) {
+                alert('Please generate a barcode first');
+                return;
+            }
+            // Serialize SVG to string
+            const xml = new XMLSerializer().serializeToString(svgElement);
+            // Create image and canvas
+            const img = new Image();
+            const svg64 = btoa(unescape(encodeURIComponent(xml)));
+            const image64 = 'data:image/svg+xml;base64,' + svg64;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                // Get dimensions (JsBarcode usually sets fixed width/height on SVG)
+                let width = svgElement.width.baseVal.value || 400;
+                let height = svgElement.height.baseVal.value || 120;
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.drawImage(img, 0, 0, width, height);
+                const a = document.createElement('a');
+                a.download = "barcode.png";
+                a.href = canvas.toDataURL('image/png');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            img.src = image64;
         }
     </script>
 </body>
